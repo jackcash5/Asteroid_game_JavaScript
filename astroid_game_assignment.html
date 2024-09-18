@@ -1,0 +1,138 @@
+<html>
+<head>
+<script>
+var canvas, ctx;
+var asteroidVertices = [];
+var asteroids = [];
+var spaceshipVertices = [];
+var spaceship;
+
+
+function init() {
+	canvas = document.getElementById("canvas");
+	ctx = canvas.getContext("2d");	
+
+	asteroidVertices.push({x:-1, y:2});
+	asteroidVertices.push({x:3, y:1});
+	asteroidVertices.push({x:4, y:-2});
+	asteroidVertices.push({x:0, y:-3});
+	asteroidVertices.push({x:-3, y:-2});
+	asteroidVertices.push({x:-2, y:0});
+
+	spaceshipVertices.push({x:0, y:2});
+	spaceshipVertices.push({x:1, y:0});
+	spaceshipVertices.push({x:0, y:-1});
+	spaceshipVertices.push({x:-1, y:0});
+
+	setKeyHandlers();
+
+	spawnAsteroids();
+	spawnSpaceship();
+	gameLoop();
+}
+
+function setKeyHandlers() {
+	document.onkeydown = function(event) {
+		var code = (event.keyCode || event.charCode);
+		if (code==37) // left arrow
+			spaceship.drot = -0.2;
+		else if (code==39) // right arrow
+			spaceship.drot = 0.2;
+		else if (code==38) // up arrow
+			spaceship.thrust = true;
+	};
+
+	document.onkeyup = function(event) {
+		var code = (event.keyCode || event.charCode);
+		if (code==37 || code==39)
+			spaceship.drot = 0;
+		else if (code==38)
+			spaceship.thrust = false;
+	};
+}
+
+function spawnAsteroids() {
+	for (var i=0; i<10; i++) {
+		var a = {	x:Math.random()*600, y:Math.random()*600, rot:Math.random()*2*Math.PI, 
+					scale:5+Math.random()*15, 
+					dx:(Math.random()-0.5)*10, dy:(Math.random()-0.5)*10, drot:(Math.random()-0.5)*0.2,
+					vertices:asteroidVertices
+				};
+		asteroids.push(a);
+	}
+}
+
+function spawnSpaceship() {
+	spaceship = {x:300, y:300, rot:0, scale:10, dx:0, dy:0, drot:0, vertices:spaceshipVertices, thrust:false};
+}
+
+function gameLoop() {
+	window.setTimeout(gameLoop, 1000/30);
+
+	ctx.fillStyle = "rgb(190,190,190)";
+	ctx.fillRect (0, 0, 600, 600);
+
+	for (var i=0; i<asteroids.length; i++) {
+		updateObject(asteroids[i]);	
+		drawObject(asteroids[i]);
+	}
+
+	if (spaceship.thrust) {
+		spaceship.dx -= Math.sin(spaceship.rot);
+		spaceship.dy += Math.cos(spaceship.rot);
+	}
+	updateObject(spaceship);
+	drawObject(spaceship);
+}
+
+function updateObject(o) {
+	o.x += o.dx;
+	o.y += o.dy;
+	if (o.x<-20)
+		o.x += 640;
+	else if (o.x>620)
+		o.x -= 640;
+	if (o.y<-20)
+		o.y += 640;
+	else if (o.y>620)
+		o.y -= 640;
+	o.rot += o.drot;	
+}
+
+function drawObject(o) {
+	var pt = getTransformedVertex(o.vertices[0], o); 
+	ctx.beginPath();
+	ctx.moveTo(pt.x, pt.y);
+
+	for (var i=1; i<o.vertices.length; i++) {
+		var pt2 = getTransformedVertex(o.vertices[i], o); 
+		ctx.lineTo(pt2.x, pt2.y);
+	}
+
+	ctx.lineTo(pt.x, pt.y);
+
+	ctx.stroke();	
+}
+
+function getTransformedVertex(vertex, object) {
+	// rotate
+	var x = vertex.x * Math.cos(object.rot) - vertex.y * Math.sin(object.rot);
+	var y = vertex.x *  Math.sin(object.rot) + vertex.y * Math.cos(object.rot);
+	// scale
+	x *= object.scale;
+	y *= object.scale;
+	// translate
+	x += object.x;
+	y += object.y;
+
+	return {x:x, y:y};
+}
+</script>
+</head>
+
+<body onload="init();">
+<center>
+<canvas id="canvas" width="600" height="600"></canvas>
+
+</body>
+</html>
